@@ -2,6 +2,8 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
+import routes from 'routes';
+import config from './config';
 
 const app = express();
 
@@ -16,12 +18,13 @@ app.use(helmet());
 // enable CORS - Cross Origin Resource Sharing
 app.use(cors());
 
-app.listen(6000, () => {
-    console.log('lol');
-});
+app.get('/oauth/dialog/authorize', routes.oauth2.authorization);
+app.post('/oauth/dialog/authorize/decision', routes.oauth2.decision);
+app.post('/oauth/token', routes.oauth2.token);
 
-const fun = async () => {
-    console.log('hola');
-}
+app.get('/oauth/userinfo', routes.user.info);
+app.get('/oauth/clientinfo', routes.client.info);
+
+app.listen(process.env.PORT || 6000);
 
 export default app;
