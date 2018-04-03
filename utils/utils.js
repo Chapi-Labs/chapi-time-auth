@@ -12,12 +12,12 @@ import config from '../config';
  * @param  {String} sub - The subject or identity of the token.
  * @return {String} The JWT Token
  */
-const createToken = ({ exp = '1h', subject = '' } = {}) => {
+const createToken = ({ exp = '1h', sub = '' } = {}) => {
     // synchronously  sign the JWT
     const token = jwt.sign(
       {
-        jwtid: uuid(), // jwt identifier
-        subject, // subject
+        jwtid: uuid(), // jwt iden  tifier
+        sub, // subject
       },
       config.parsed.JWT_SECRET,
       {

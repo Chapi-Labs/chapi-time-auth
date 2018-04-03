@@ -27,6 +27,7 @@ app.use(helmet());
 app.use(cors());
 app.post('/oauth/token', routes.oauth2.token);
 app.get('/oauth/userinfo', routes.user.info);
+app.get('/oauth/clientinfo', routes.client.info);
 
 
 app.listen(process.env.PORT || 6000);

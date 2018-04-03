@@ -4,6 +4,7 @@ const { BasicStrategy }                    = require('passport-http');
 const { Strategy: ClientPasswordStrategy } = require('passport-oauth2-client-password');
 const { Strategy: BearerStrategy }         = require('passport-http-bearer');
 import db                                   from '../db';
+import utils                                from '../utils/utils';
 
 /**
  * LocalStrategy
@@ -13,10 +14,16 @@ import db                                   from '../db';
  * a user is logged in before asking them to approve the request.
  */
 passport.use(new LocalStrategy((username, password, done) => {
-    db.users.findByUsername(username)
-        .then(user => validate.user(user, password))
-        .then(user => done(null, user))
-        .catch(() => done(null, false));
+   try {
+     const user = db.users.findByUsername(username);
+     if (user.password !== password) {
+       // error
+       return done(null, false);
+     }
+     return done(null, user);
+   } catch (error) {
+     done(null, false);
+   }
 }));
 
 /**
@@ -33,9 +40,12 @@ passport.use(new LocalStrategy((username, password, done) => {
 passport.use(new BasicStrategy(async (clientId, clientSecret, done) => {
   try {
     const client = await db.clients.findByClientId(clientId);
-    done(null, client);
+    if (client.clientSecret !== clientSecret) {
+      return done(null, false);
+    }
+    return done(null, client);
   } catch (error) {
-    done(null, false);
+    return done(null, false);
   }
 }));
 
@@ -49,9 +59,12 @@ passport.use(new BasicStrategy(async (clientId, clientSecret, done) => {
 passport.use(new ClientPasswordStrategy(async (clientId, clientSecret, done) => {
   try {
     const client = await db.clients.findByClientId(clientId);
-    done(null, client);
+    if (client.clientSecret !== clientSecret) {
+      return done(null, false);
+    }
+    return done(null, client);
   } catch (error) {
-    done(null, false);
+    return done(null, false);
   }
 }));
 
@@ -66,11 +79,25 @@ passport.use(new ClientPasswordStrategy(async (clientId, clientSecret, done) => 
  * To keep this example simple, restricted scopes are not implemented, and this is just for
  * illustrative purposes
  */
-passport.use(new BearerStrategy((accessToken, done) => {
-   /*  db.accessTokens.find(accessToken)
-        .then(token => validate.token(token, accessToken))
-        .then(token => done(null, token, { scope: '*' }))
-        .catch(() => done(null, false)); */
+passport.use(new BearerStrategy(async(accessToken, done) => {
+    //validate jwt token
+    try {
+      const token = utils.verifyToken(accessToken);
+      if (!token) {
+        return done(null, false);
+      }
+      if (token.sub) {
+        const user = await db.users.findById(token.sub);
+        return done(null, user, { scope: '*'});
+      } else {
+        const client = await db.clients.findByClientId(token.clientID);
+        return done(null, client, { scope: '*'} );
+      }
+      
+    } catch (error) {
+      return done(null, false);
+    }
+    
 }));
 
 // Register serialialization and deserialization functions.

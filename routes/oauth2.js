@@ -1,6 +1,7 @@
 
 import oauth2orize  from 'oauth2orize';
 import passport     from 'passport';
+import ms           from 'ms';
 import db           from '../db';
 import utils        from '../utils/utils';
 import config       from '../config';
@@ -61,6 +62,7 @@ server.grant(oauth2orize.grant.code((client, redirectUri, user, ares, done) => {
 server.grant(oauth2orize.grant.token((client, user, ares, done) => {
   const token = utils.createToken({
       sub: user.id,
+      exp: config.parsed.TOKEN_EXPIRATION,
   });
   db.accessTokens.save(token, user.id, client.clientId, (error) => {
     if (error) return done(error);
@@ -82,6 +84,7 @@ server.exchange(oauth2orize.exchange.code((client, code, redirectUri, done) => {
     
     const token = utils.createToken({
         sub: user.id,
+        exp: config.parsed.TOKEN_EXPIRATION,
     });
     
     db.accessTokens.save(token, authCode.userId, authCode.clientId, (error) => {
@@ -98,8 +101,14 @@ server.exchange(oauth2orize.exchange.code((client, code, redirectUri, done) => {
 
 server.exchange(oauth2orize.exchange.password(async (client, username, password, scope, done) => {
   try {
+    const localClient = await db.clients.findByClientId(client.clientId);
+    if (localClient.secret !== client.secret) {
+      return done(null, false);
+    }
     const user = await db.users.findByUsername(username);
-
+    if (user.password !== password) {
+      return done(null, false);
+    }
     const token = utils.createToken({
       sub: user.id,
       exp: config.parsed.TOKEN_EXPIRATION,
@@ -108,11 +117,11 @@ server.exchange(oauth2orize.exchange.password(async (client, username, password,
       sub: user.id,
       exp: config.parsed.REFRESH_EXPIRATION,
     });
-    
-    await db.accessTokens.save(refreshToken, user.id, client.clientId);
+    const expiration = new Date(Date.now() + ms(config.parsed.REFRESH_EXPIRATION));
+    await db.accessTokens.save(refreshToken, expiration, user.id, client.clientId);
     return done(null, token, refreshToken);
   } catch (error) {
-    done(null, false);
+    return done(null, false);
   }
 }));
 

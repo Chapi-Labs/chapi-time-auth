@@ -5,7 +5,7 @@ const users = [
 
 const findById = (id) => {
   for (let i = 0, len = users.length; i < len; i++) {
-    if (users[i].id === id) return done(null, users[i]);
+    if (users[i].id === id) return users[i];
   }
   return new Error('User Not Found');
 };
