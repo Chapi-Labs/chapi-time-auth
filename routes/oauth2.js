@@ -1,9 +1,8 @@
 
 import oauth2orize  from 'oauth2orize';
 import passport     from 'passport';
-import login        from 'login';
 import db           from '../db';
-import utils        from '../utils';
+import utils        from '../utils/utils';
 
 // Create OAuth 2.0 server
 const server = oauth2orize.createServer();
@@ -61,7 +60,6 @@ server.grant(oauth2orize.grant.code((client, redirectUri, user, ares, done) => {
 server.grant(oauth2orize.grant.token((client, user, ares, done) => {
   const token = utils.createToken({
       sub: user.id,
-      exp: config.token.expiresIn,
   });
   db.accessTokens.save(token, user.id, client.clientId, (error) => {
     if (error) return done(error);
@@ -83,7 +81,6 @@ server.exchange(oauth2orize.exchange.code((client, code, redirectUri, done) => {
     
     const token = utils.createToken({
         sub: user.id,
-        exp: config.token.expiresIn,
     });
     
     db.accessTokens.save(token, authCode.userId, authCode.clientId, (error) => {
@@ -98,29 +95,21 @@ server.exchange(oauth2orize.exchange.code((client, code, redirectUri, done) => {
 // authorization request for verification. If these values are validated, the
 // application issues an access token on behalf of the user who authorized the code.
 
-server.exchange(oauth2orize.exchange.password((client, username, password, scope, done) => {
-  // Validate the client
-  db.clients.findByClientId(client.clientId, (error, localClient) => {
-    if (error) return done(error);
-    if (!localClient) return done(null, false);
-    if (localClient.clientSecret !== client.clientSecret) return done(null, false);
-    // Validate the user
-    db.users.findByUsername(username, (error, user) => {
-      if (error) return done(error);
-      if (!user) return done(null, false);
-      if (password !== user.password) return done(null, false);
-      // Everything validated, return the token
-      // create JWT token
-      const token = utils.createToken({
-        sub: user.id,
-        exp: config.token.expiresIn,
-      });
-      db.accessTokens.save(token, user.id, client.clientId, (error) => {
-        if (error) return done(error);
-        return done(null, token);
-      });
+server.exchange(oauth2orize.exchange.password(async (client, username, password, scope, done) => {
+  console.log('entra');
+  try {
+    const user = await db.users.findByUsername(username);
+
+    const token = utils.createToken({
+      sub: user.id,
     });
-  });
+    console.log(token);
+    db.accessTokens.save(token, user.id, client.clientId);
+    done(null, token);
+  } catch (error) {
+    console.log(error); 
+    done(null, false);
+  }
 }));
 
 // Exchange the client id and password/secret for an access token. The callback accepts the
@@ -129,6 +118,7 @@ server.exchange(oauth2orize.exchange.password((client, username, password, scope
 // application issues an access token on behalf of the client who authorized the code.
 
 server.exchange(oauth2orize.exchange.clientCredentials((client, scope, done) => {
+  console.log('entra2');
   // Validate the client
   db.clients.findByClientId(client.clientId, (error, localClient) => {
     if (error) return done(error);
@@ -138,7 +128,6 @@ server.exchange(oauth2orize.exchange.clientCredentials((client, scope, done) => 
     // create JWT token
     const token = utils.createToken({
       sub: user.id,
-       exp: config.token.expiresIn,
     });
     // Pass in a null for user id since there is no user with this grant type
     db.accessTokens.save(token, null, client.clientId, (error) => {
@@ -185,7 +174,6 @@ server.exchange(oauth2orize.exchange.refreshToken( async (client, refreshToken, 
 // first, and rendering the `dialog` view.
 
 const authorization = [
-  login.ensureLoggedIn(),
   server.authorization((clientId, redirectUri, done) => {
     db.clients.findByClientId(clientId, (error, client) => {
       if (error) return done(error);
@@ -222,7 +210,6 @@ const authorization = [
 // a response.
 
 const decision = [
-  login.ensureLoggedIn(),
   server.decision(),
 ];
 

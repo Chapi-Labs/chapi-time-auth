@@ -29,16 +29,16 @@ const clientSchema = new Schema({
   clientSecret: String,
   trustedClient: Boolean,
 });
-const Client = mongoose.model('Client', clientSchema, 'clients');
+const Client = mongoose.model('Client', clientSchema, 'client');
 
 /**
  * Returns a client if it finds one, otherwise returns null if a client is not found.
  * @param   {String}   id   - The unique id of the client to find
  * @returns {Promise}  resolved promise with the client if found, otherwise undefined
  */
-const find = id => async () => {
+const find = async (id) => {
   try {
-    const client =  await findOne({ id });
+    const client =  await Client.findOne({ id }).lean();
     return client;
   } catch (error) {
     console.log(error);
@@ -52,9 +52,9 @@ const find = id => async () => {
  * @param   {Function} done     - The client if found, otherwise returns undefined
  * @returns {Promise} resolved promise with the client if found, otherwise undefined
  */
-const findByClientId = clientId => async () => {
+const findByClientId = async (clientId) => {
   try {
-    const client = await findOne({ clientId });
+    const client = await Client.findOne({ clientId }).lean();
     return client;
   } catch (error) {
     console.log(error);

@@ -1,11 +1,12 @@
-import { BasicStrategy }                    from 'passport-http';
-import { Strategy: BearerStrategy }         from 'passport-http-bearer';
-import { Strategy: ClientPasswordStrategy } from 'passport-oauth2-client-password';
-import { Strategy: LocalStrategy }          from 'passport-local';
-import passport                             from 'passport';
-import db                                   from './db';
-import validate                             from './validate';
+const passport                             = require('passport');
+const { Strategy: LocalStrategy }          = require('passport-local');
+const { BasicStrategy }                    = require('passport-http');
+const { Strategy: ClientPasswordStrategy } = require('passport-oauth2-client-password');
+const { Strategy: BearerStrategy }         = require('passport-http-bearer');
+import db                                   from '../db';
 
+console.log(BasicStrategy);
+console.log(ClientPasswordStrategy);
 /**
  * LocalStrategy
  *
@@ -31,11 +32,16 @@ passport.use(new LocalStrategy((username, password, done) => {
  * to the `Authorization` header).  While this approach is not recommended by
  * the specification, in practice it is quite common.
  */
-passport.use(new BasicStrategy((clientId, clientSecret, done) => {
-    db.clients.findByClientId(clientId)
-        .then(client => validate.client(client, clientSecret))
-        .then(client => done(null, client))
-        .catch(() => done(null, false));
+passport.use(new BasicStrategy(async (clientId, clientSecret, done) => {
+  try {
+    console.log('entra_3');
+    const client = await db.clients.findByClientId(clientId);
+    console.log(client, clientSecret);
+    done(null, client);
+  } catch (error) {
+    console.log(error)
+    done(null, false);
+  }
 }));
 
 /**
@@ -45,11 +51,15 @@ passport.use(new BasicStrategy((clientId, clientSecret, done) => {
  * using a client ID and client secret. The strategy requires a verify callback,
  * which accepts those credentials and calls done providing a client.
  */
-passport.use(new ClientPasswordStrategy((clientId, clientSecret, done) => {
-    db.clients.findByClientId(clientId)
-        .then(client => validate.client(client, clientSecret))
-        .then(client => done(null, client))
-        .catch(() => done(null, false));
+passport.use(new ClientPasswordStrategy(async (clientId, clientSecret, done) => {
+  try {
+    console.log('entra4');
+    const client = await db.clients.findByClientId(clientId);
+    done(null, client);
+  } catch (error) {
+    console.log(error, '4');
+    done(null, false);
+  }
 }));
 
 /**
@@ -64,10 +74,10 @@ passport.use(new ClientPasswordStrategy((clientId, clientSecret, done) => {
  * illustrative purposes
  */
 passport.use(new BearerStrategy((accessToken, done) => {
-    db.accessTokens.find(accessToken)
+   /*  db.accessTokens.find(accessToken)
         .then(token => validate.token(token, accessToken))
         .then(token => done(null, token, { scope: '*' }))
-        .catch(() => done(null, false));
+        .catch(() => done(null, false)); */
 }));
 
 // Register serialialization and deserialization functions.

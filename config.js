@@ -1,7 +1,8 @@
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 
-const parsed = dotenv.config();
-mongoose.connect(parsed.DB_URI);
+const env = dotenv.config();
 
-export default parsed;
+mongoose.connect(env.parsed.DB_URI);
+
+export default env;

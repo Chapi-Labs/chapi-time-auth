@@ -1,6 +1,6 @@
 import uuid from 'uuid/v4';
 import jwt from 'jsonwebtoken';
-import config from './config';
+import config from '../config';
 
 /**
  * Creates a signed JSON WebToken and returns it.  Utilizes the private certificate to create
@@ -20,7 +20,7 @@ const createToken = ({ exp = 3600, sub = '' } = {}) => {
         sub, // subject
         exp: Math.floor(Date.now() / 1000) + exp, // expiration period in seconds
       },
-      config.JWT_SECRET,
+      config.parsed.JWT_SECRET,
       {
         algorithm: 'HS256',
       },
