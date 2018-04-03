@@ -3,6 +3,7 @@ import oauth2orize  from 'oauth2orize';
 import passport     from 'passport';
 import db           from '../db';
 import utils        from '../utils/utils';
+import config       from '../config';
 
 // Create OAuth 2.0 server
 const server = oauth2orize.createServer();
@@ -96,18 +97,21 @@ server.exchange(oauth2orize.exchange.code((client, code, redirectUri, done) => {
 // application issues an access token on behalf of the user who authorized the code.
 
 server.exchange(oauth2orize.exchange.password(async (client, username, password, scope, done) => {
-  console.log('entra');
   try {
     const user = await db.users.findByUsername(username);
 
     const token = utils.createToken({
       sub: user.id,
+      exp: config.parsed.TOKEN_EXPIRATION,
     });
-    console.log(token);
-    db.accessTokens.save(token, user.id, client.clientId);
-    done(null, token);
+    const refreshToken = utils.createToken({
+      sub: user.id,
+      exp: config.parsed.REFRESH_EXPIRATION,
+    });
+    
+    await db.accessTokens.save(refreshToken, user.id, client.clientId);
+    return done(null, token, refreshToken);
   } catch (error) {
-    console.log(error); 
     done(null, false);
   }
 }));
@@ -118,7 +122,6 @@ server.exchange(oauth2orize.exchange.password(async (client, username, password,
 // application issues an access token on behalf of the client who authorized the code.
 
 server.exchange(oauth2orize.exchange.clientCredentials((client, scope, done) => {
-  console.log('entra2');
   // Validate the client
   db.clients.findByClientId(client.clientId, (error, localClient) => {
     if (error) return done(error);
@@ -128,9 +131,15 @@ server.exchange(oauth2orize.exchange.clientCredentials((client, scope, done) => 
     // create JWT token
     const token = utils.createToken({
       sub: user.id,
+      exp: config.parsed.TOKEN_EXPIRATION,
     });
+    const refreshToken = utils.createToken({
+      sub: user.id,
+      exp: config.parsed.REFRESH_EXPIRATION,
+    });
+
     // Pass in a null for user id since there is no user with this grant type
-    db.accessTokens.save(token, null, client.clientId, (error) => {
+    db.accessTokens.save(refreshToken, null, client.clientId, (error) => {
       if (error) return done(error);
       return done(null, token);
     });
@@ -146,10 +155,14 @@ server.exchange(oauth2orize.exchange.clientCredentials((client, scope, done) => 
  */
 server.exchange(oauth2orize.exchange.refreshToken( async (client, refreshToken, scope, done) => {
     try {
-      const foundRefreshToken = await db.refreshTokens.find(refreshToken);
+      const foundRefreshToken = await db.accessTokens.find(refreshToken);
       if (!foundRefreshToken) {
         return done(null, false);
       }
+      const token = utils.createToken({
+        sub: foundRefreshToken.sub,
+        exp: config.parsed.TOKEN_EXPIRATION,
+      });
       // return new access token;
       return done(null, token);
     } catch (error) {

@@ -41,7 +41,6 @@ const find = async (id) => {
     const client =  await Client.findOne({ id }).lean();
     return client;
   } catch (error) {
-    console.log(error);
     return null;
   }
 };
@@ -57,7 +56,6 @@ const findByClientId = async (clientId) => {
     const client = await Client.findOne({ clientId }).lean();
     return client;
   } catch (error) {
-    console.log(error);
     return null;
   }
 };

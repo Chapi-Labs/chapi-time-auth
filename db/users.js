@@ -3,11 +3,11 @@ const users = [
   { id: '2', username: 'joe', password: 'password', name: 'Joe Davis' },
 ];
 
-const findById = (id, done) => {
+const findById = (id) => {
   for (let i = 0, len = users.length; i < len; i++) {
     if (users[i].id === id) return done(null, users[i]);
   }
-  return done(new Error('User Not Found'));
+  return new Error('User Not Found');
 };
 
 const findByUsername = (username) => {

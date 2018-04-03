@@ -5,8 +5,6 @@ const { Strategy: ClientPasswordStrategy } = require('passport-oauth2-client-pas
 const { Strategy: BearerStrategy }         = require('passport-http-bearer');
 import db                                   from '../db';
 
-console.log(BasicStrategy);
-console.log(ClientPasswordStrategy);
 /**
  * LocalStrategy
  *
@@ -34,12 +32,9 @@ passport.use(new LocalStrategy((username, password, done) => {
  */
 passport.use(new BasicStrategy(async (clientId, clientSecret, done) => {
   try {
-    console.log('entra_3');
     const client = await db.clients.findByClientId(clientId);
-    console.log(client, clientSecret);
     done(null, client);
   } catch (error) {
-    console.log(error)
     done(null, false);
   }
 }));
@@ -53,11 +48,9 @@ passport.use(new BasicStrategy(async (clientId, clientSecret, done) => {
  */
 passport.use(new ClientPasswordStrategy(async (clientId, clientSecret, done) => {
   try {
-    console.log('entra4');
     const client = await db.clients.findByClientId(clientId);
     done(null, client);
   } catch (error) {
-    console.log(error, '4');
     done(null, false);
   }
 }));

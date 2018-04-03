@@ -9,7 +9,7 @@ const mongoose = require('mongoose');
 /**
  * Tokens model mongodb
  */
-const RefreshToken = mongoose.model('Token', {
+const RefreshToken = mongoose.model('RefreshToken', {
   id: String,
   clientID: String,
   expirationDate: Date,
@@ -30,7 +30,6 @@ const find = async (token) => {
     }
     return dbToken;
   } catch (error) {
-    console.log(error);
     return;
   }
 };
@@ -48,6 +47,7 @@ const find = async (token) => {
  */
 const save = async (code, expirationDate, userID, clientID, scope) => {
   try {
+    const tokenId = jwt.decode(code).jti;
     const token = new RefreshToken({
       id: tokenId,
       expirationDate,
@@ -58,7 +58,7 @@ const save = async (code, expirationDate, userID, clientID, scope) => {
     await token.save();
     return token;
   } catch (error) {
-    console.log(error);
+    throw new Error('Error saving token');
   }
 };
 
@@ -72,7 +72,7 @@ const remove = async (token) => {
     const tokenId = jwt.decode(token).jti;
     await RefreshToken.remove({ id: tokenId });
   } catch (error) {
-    console.log(error);
+    throw new Error('Error removing token');
   }
 
 };
@@ -96,7 +96,7 @@ const removeExpired = async () => {
       return accumulator;
     });
   } catch (error) {
-    console.log(error);
+    throw new Error('Error removing expired tokens');
   }
 };
 
@@ -108,7 +108,7 @@ const removeAll = async () => {
   try {
     await RefreshToken.remove();
   } catch (error) {
-    console.log(error);
+    throw new Error('Error removing all tokens');
   }
 };
 

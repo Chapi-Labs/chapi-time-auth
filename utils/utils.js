@@ -12,17 +12,17 @@ import config from '../config';
  * @param  {String} sub - The subject or identity of the token.
  * @return {String} The JWT Token
  */
-const createToken = ({ exp = 3600, sub = '' } = {}) => {
+const createToken = ({ exp = '1h', subject = '' } = {}) => {
     // synchronously  sign the JWT
     const token = jwt.sign(
       {
-        jti: uuid(), // jwt identifier
-        sub, // subject
-        exp: Math.floor(Date.now() / 1000) + exp, // expiration period in seconds
+        jwtid: uuid(), // jwt identifier
+        subject, // subject
       },
       config.parsed.JWT_SECRET,
       {
         algorithm: 'HS256',
+        expiresIn: exp,
       },
     );
 
@@ -35,6 +35,6 @@ const createToken = ({ exp = 3600, sub = '' } = {}) => {
  * @throws  {Error} Error if the token could not be verified
  * @returns {Object} The token decoded and verified
  */
-const verifyToken = token => jwt.verify(token, config.JWT_SECRET);
+const verifyToken = token => jwt.verify(token, config.parsed.JWT_SECRET);
 
 export default { createToken, verifyToken };
